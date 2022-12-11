@@ -1,6 +1,7 @@
 #include <windows.h>		// Header File For Windows
 #include <gl\gl.h>			// Header File For The OpenGL32 Library
 #include <gl\glu.h>			// Header File For The GLu32 Library
+#include <GL\glut.h>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
@@ -26,6 +27,7 @@ using namespace cv;
 
 #define _CRT_SECURE_NO_DEPRECATE
 
+bool printed = FALSE;
 
 HDC     hDC = NULL;                   // Private GDI Device Context
 HGLRC       hRC = NULL;                   // Permanent Rendering Context
@@ -36,7 +38,7 @@ bool        keys[256];                  // Array Used For The Keyboard Routine
 bool        fullscreen = TRUE;                // Fullscreen Flag Set To TRUE By Default
 bool        bRender = FALSE;                 // Polygon Flag Set To TRUE By Default ( NEW )
 
-Mat heatMap;
+Mat heightMap;
 float scaleValue = 0.25f;                   // Scale Value For The Terrain ( NEW )
 float leftRightRotate = 0.25f;
 float upDownRotate = 0.25f;
@@ -49,24 +51,6 @@ GLfloat     rquad;                      // Angle For The Quad     ( NEW )
 
 // mouse handling
 int mouseX = 0, mouseY = 0;
-int lastMouseX = 0, lastMouseY = 0;
-float angleX = 0.0, angleY = 0.0;
-
-void mouseMoved()
-{
-
-	// calc diff and update mouse positions
-	int deltaX = mouseX - lastMouseX;
-	int deltaY = mouseY - lastMouseY;
-
-	lastMouseX = mouseX;
-	lastMouseY = mouseY;
-
-	// Calculate the rotation angle based on the mouse delta values
-	float angleX = (float)deltaX * 0.1;
-	float angleY = (float)deltaY * 0.1;
-}
-
 
 LRESULT	CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);	// Declaration For WndProc
 
@@ -89,37 +73,7 @@ GLvoid ReSizeGLScene(GLsizei width, GLsizei height)		// Resize And Initialize Th
 	glLoadIdentity();									// Reset The Modelview Matrix
 }
 
-// Loads The .RAW File And Stores It In pHeightMap
-void LoadRawFile(LPSTR strName, int nSize, BYTE *pHeightMap)
-{
-	FILE *pFile = NULL;
 
-	// Open The File In Read / Binary Mode.
-	pFile = fopen(strName, "rb");
-
-	// Check To See If We Found The File And Could Open It
-	if (pFile == NULL)
-	{
-		// Display Error Message And Stop The Function
-		MessageBox(NULL, "Can't Find The Height Map!", "Error", MB_OK);
-		return;
-	}
-	// Here We Load The .RAW File Into Our pHeightMap Data Array
-	// We Are Only Reading In '1', And The Size Is (Width * Height)
-	fread(pHeightMap, 1, nSize, pFile);
-
-	// After We Read The Data, It's A Good Idea To Check If Everything Read Fine
-	int result = ferror(pFile);
-
-	// Check If We Received An Error
-	if (result)
-	{
-		MessageBox(NULL, "Failed To Get Data!", "Error", MB_OK);
-	}
-
-	// Close The File
-	fclose(pFile);
-}
 
 int InitGL(GLvoid)										// All Setup For OpenGL Goes Here
 {
@@ -134,137 +88,119 @@ int InitGL(GLvoid)										// All Setup For OpenGL Goes Here
 	// g_HeightMap array.  We also pass in the size of the .raw file (1024).
 
 
-	heatMap = imread("G:\\My Drive\\uni\\Topics-in-Graphics-and-Visual-Computing\\Islands_of_the_Sentinel.png", IMREAD_COLOR);
-	//heatMap = imread("G:\\My Drive\\uni\\Topics-in-Graphics-and-Visual-Computing\\Netherlands.png", IMREAD_COLOR);
+	heightMap = imread("G:\\My Drive\\uni\\Topics-in-Graphics-and-Visual-Computing\\Islands_of_the_Sentinel.png", IMREAD_COLOR);
+
 	return TRUE;                        // Initialization Went OK
 }
 
-
-
-float Height(int X, int Y)          // This Returns The Height From A Height Map Index
+class Triangle
 {
-	int x = X % heatMap.rows;                   // Error Check Our x Value
-	int y = Y % heatMap.cols;                   // Error Check Our y Value
+public:
+	Triangle(const GLfloat v1[3], const GLfloat v2[3], const GLfloat v3[3])
+		: v1{ v1[0], v1[1], v1[2] },
+		v2{ v2[0], v2[1], v2[2] },
+		v3{ v3[0], v3[1], v3[2] } {}
 
-	if (!&heatMap) return 0;               // Make Sure Our Data Is Valid
-	return 50 * heatMap.at<Vec3b>(Point(y, x)).val[0] / 256;       // Index Into Our Height Array And Return The Height
-}
+	Triangle(const int x, const int y)
+		: x(x), y(y)
+	{
+		// x1, y1, z1
+		v1[0] = float(x);
+		v1[1] = Height(x, y);
+		v1[2] = float(y);
 
-void SetVertexColor(int x, int y)     // This Sets The Color Value For A Particular Index
-{                               // Depending On The Height Index
-	if (!&heatMap) return;                 // Make Sure Our Height Data Is Valid
+		// x2, y2, z2
+		v2[0] = float(x) + STEP_SIZE;
+		v2[1] = Height(x + STEP_SIZE, y);
+		v2[2] = float(y);
 
-	float fColor = -0.15f + (Height(x, y) / 256.0f);
+		// x3, y3, z3
+		v3[0] = float(x);
+		v3[1] = Height(x, y + STEP_SIZE);
+		v3[2] = float(y) + STEP_SIZE;
+	}
 
-	// Assign This Blue Shade To The Current Vertex
-	glColor3f(0.0f, 0.0f, fColor);
-}
+	void draw()
+	{
+		glBegin(GL_TRIANGLES);
+		SetVertexColor(x, y);
+		glVertex3f(v1[0], v1[1], v1[2]);
+		glVertex3f(v2[0], v2[1], v2[2]);
+		glVertex3f(v3[0], v3[1], v3[2]);
+		glEnd();
 
-bool isUnderMousePointer(int x1, int y1, int x2, int y2, int x3, int y3) {
-	// Compute the barycentric coordinates of the mouse position with respect to the triangle
-	if (((y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3)) == 0 || ((y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3)) == 0)
-		return FALSE;
+		drawOutline();
+	}
 
-	GLfloat u = ((y2 - y3)*(mouseX - x3) + (x3 - x2)*(mouseY - y3)) / ((y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3));
-	GLfloat v = ((y3 - y1)*(mouseX - x3) + (x1 - x3)*(mouseY - y3)) / ((y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3));
-	GLfloat w = 1 - u - v;
+	void drawOutline()
+	{
+		// just black outline of the triangle
 
-	return (u >= 0 && v >= 0 && w >= 0);
-		// If the barycentric coordinates are all non-negative, then the mouse is within the triangle
-		// lesson 32 nehe - picking
-		// glrendermode - select
-		// lookat where the pointer is
-		// glpickmatrix
-		// glreadpixel
+		glColor3f(0.0, 0.0, 0.0);
+		glBegin(GL_LINE_LOOP);
+		glVertex3f(v1[0], v1[1], v1[2]);
+		glVertex3f(v2[0], v2[1], v2[2]);
+		glVertex3f(v3[0], v3[1], v3[2]);
+		glEnd();
+	}
 
-		
-}
+	Triangle* getAdjecentTriangle()
+	{
 
-void drawTrinagle(int x, int y)
-{
+		GLfloat adj_v1[3] = { v3[0], v3[1], v3[2] };
+		GLfloat adj_v2[3] = { v2[0], v2[1], v2[2] };
+		GLfloat adj_v3[3] = { float(x) + STEP_SIZE, Height(x + STEP_SIZE, y + STEP_SIZE), float(y) + STEP_SIZE };
 
-	GLfloat highColor[3] = { 0.8f, 0.8f, 0.8f };
-	GLfloat mediumColor[3] = { 0.6f, 0.6f, 0.6f };
-	GLfloat lowColor[3] = { 0.3f, 0.3f, 0.3f };
-	// z as color
+		Triangle* res = new Triangle(adj_v1, adj_v2, adj_v3);
+		res->setXY(x, y);
+		return res;
+	}
 
-	GLfloat hoverColor[3] = { 1.0, 0.0, 0.0 };
+	void setXY(int x,int y)
+	{
+		this->x = x;
+		this->y = y;
+	}
+
+private:
+	float Height(int X, int Y) // This Returns The Height From A Height Map Index
+	{
+		int x = X % heightMap.rows;
+		int y = Y % heightMap.cols;
+
+		if (!&heightMap)
+			return 0;											   // Make Sure Our Data Is Valid
+		return 61 * heightMap.at<Vec3b>(Point(y, x)).val[0] / 256; // Index Into Our Height Array And Return The Height
+	}
 	
-	GLfloat x1, y1, z1;
-	GLfloat x2, y2, z2;
-	GLfloat x3, y3, z3;
 
-	x1 = float(x);
-	y1 = Height(x, y);
-	z1 = float(y);
+	void SetVertexColor(int x, int y)     // This Sets The Color Value For A Particular Index
+	{                               // Depending On The Height Index
+		if (!&heightMap) return;                 // Make Sure Our Height Data Is Valid
 
-	x2 = float(x) + STEP_SIZE;
-	y2 = Height(x2, y);
-	z2 = float(y);
+		//float fColor = -0.15f + (Height(x, y) / 256.0f);
+		// map values from [0,256] to [0, 61] in order to use the map in color_scale_01.png
+		float fColor = Height(x, y);
 
-	x3 = float(x);
-	y3 = Height(x, y + STEP_SIZE);
-	z3 = float(y) + STEP_SIZE;
+		if (fColor < 15.8) { glColor3f(0, 0, 0); } // black
+		else if (fColor < 21.45) { glColor3f(0, 0, 255); }
+		else if (fColor < 27.10) { glColor3f(0, 128, 255); }
+		else if (fColor < 32.75) { glColor3f(0, 255, 255); }
+		else if (fColor < 28.40) { glColor3f(0, 255, 128); }
+		else if (fColor < 44.05) { glColor3f(0, 255, 0); }
+		else if (fColor < 49.70) { glColor3f(255, 255, 0); }
+		else if (fColor < 55.35) { glColor3f(255, 128, 0); }
+		else if (fColor < 61.00) { glColor3f(255, 0, 0); }
+		else { glColor3f(255, 255, 255); } // white
 
-	if (isUnderMousePointer(x1, y1, x2, y2, x3, y3)) {
-		glBegin(GL_TRIANGLES);
-		glVertex3f(x1, y1, z1);
-		glVertex3f(x2, y2, z2);
-		glVertex3f(x3, y3, z3);
-		glColor3fv(hoverColor);
-		glEnd();
-	}
-	else {
-		glBegin(GL_TRIANGLES);
-		glColor3fv(highColor);
-		glVertex3f(x1, y1, z1);
-		glColor3fv(mediumColor);
-		glVertex3f(x2, y2, z2);
-		glColor3fv(lowColor);
-		glVertex3f(x3, y3, z3);
-		glEnd();
 	}
 
-	x1 = x3;
-	y1 = y3;
-	z1 = z3;
+	int x, y;
+	GLfloat v1[3], v2[3], v3[3];
+};
 
-	x3 = float(x) + STEP_SIZE;
-	y3 = Height(x + STEP_SIZE, y + STEP_SIZE);
-	z3 = float(y) + STEP_SIZE;
 
-	if (isUnderMousePointer(x1, y1, x2, y2, x3, y3)) {
-		glBegin(GL_TRIANGLES);
-		glVertex3f(x1, y1, z1);
-		glVertex3f(x2, y2, z2);
-		glVertex3f(x3, y3, z3);
-		glColor3fv(hoverColor);
-		glEnd();
-	}
-	else {
-		glBegin(GL_TRIANGLES);
-		glColor3fv(highColor);
-		glVertex3f(x1, y1, z1);
-		glColor3fv(mediumColor);
-		glVertex3f(x2, y2, z2);
-		glColor3fv(lowColor);
-		glVertex3f(x3, y3, z3);
-		glEnd();
-	}
-}
-
-int DrawGLScene(GLvoid)									// Here's Where We Do All The Drawing
-{
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glLoadIdentity();
-	gluLookAt(212, 60, 194, 
-				186, 55, 171,
-				0, 1, 0);
-	glScalef(scaleValue, scaleValue*HEIGHT_RATIO, scaleValue);
-	// glTranslatef(-512, 0, -512);
-	glRotatef(leftRightRotate * 10, 0, 10, 0);
-	glRotatef(upDownRotate * 10, 0, 0, 10);
-	   	 
+void drawAxis() {
 	// Draw the x-axis in red
 	glColor3f(1.0, 0.0, 0.0);
 	glBegin(GL_LINES);
@@ -285,13 +221,35 @@ int DrawGLScene(GLvoid)									// Here's Where We Do All The Drawing
 	glVertex3f(0.0, 0.0, 0.0);
 	glVertex3f(0.0, 0.0, 700.0);
 	glEnd();
+}
 
-	int cols = heatMap.cols;
-	int rows = heatMap.rows;
+int DrawGLScene(GLvoid)									// Here's Where We Do All The Drawing
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glLoadIdentity();
+	gluLookAt(212, 60, 194,
+		186, 55, 171,
+		0, 1, 0);
+	glScalef(scaleValue, scaleValue*HEIGHT_RATIO, scaleValue);
+	glRotatef(leftRightRotate * 10, 0, 10, 0);
+	glRotatef(upDownRotate * 10, 0, 0, 10);
 
+	drawAxis();
+	
+	vector<Triangle*> triangles;
+
+	int cols = heightMap.cols;
+	int rows = heightMap.rows;
 	for (int x = 0; x < (rows - STEP_SIZE); x += STEP_SIZE) {
 		for (int y = 0; y < (cols - STEP_SIZE); y += STEP_SIZE) {
-			drawTrinagle(x, y);
+			Triangle* t1 = new Triangle(x, y);
+			Triangle* t2 = t1->getAdjecentTriangle();
+
+			triangles.push_back(t1);
+			triangles.push_back(t2);
+
+			t1->draw();
+			t2->draw();
 		}
 	}
 
@@ -374,7 +332,7 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 	wc.lpszMenuName = NULL;									// We Don't Want A Menu
 	wc.lpszClassName = "OpenGL";								// Set The Class Name
 
-	
+
 
 	if (!RegisterClass(&wc))									// Attempt To Register The Window Class
 	{
@@ -645,37 +603,36 @@ int WINAPI WinMain(HINSTANCE   hInstance,      // Instance
 			}
 
 			// keys / mouse events
-			if (keys[VK_UP])            
-				scaleValue += 0.001f;   
+			if (keys[VK_UP])
+				scaleValue += 0.001f;
 
-			if (keys[VK_DOWN])          
-				scaleValue -= 0.001f;   
-			
+			if (keys[VK_DOWN])
+				scaleValue -= 0.001f;
+
 			if (keys[VK_A])
 				leftRightRotate += 0.01f;
 
 			if (keys[VK_D])
 				leftRightRotate -= 0.01f;
-			
+
 			if (keys[VK_W])
 				upDownRotate += 0.01f;
 
 			if (keys[VK_S])
 				upDownRotate -= 0.01f;
 
-			
+
 			POINT cursorPos;
 			GetCursorPos(&cursorPos);
 			mouseX = cursorPos.x;
 			mouseX = cursorPos.y;
 
-			mouseMoved();
 
-			
+
 		}
 	}
 
 	// Shutdown
-	KillGLWindow();                     
-	return (msg.wParam);                
+	KillGLWindow();
+	return (msg.wParam);
 }
