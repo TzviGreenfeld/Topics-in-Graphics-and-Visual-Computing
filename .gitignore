@@ -4,4 +4,4 @@
 **/*.aps
 *.tlog
 *.obj
-
+.gitignore
