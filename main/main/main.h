@@ -90,7 +90,7 @@ int InitGL(GLvoid)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 
-	heightMap = imread("G:\\My Drive\\uni\\Topics-in-Graphics-and-Visual-Computing\\Islands_of_the_Sentinel.png", IMREAD_COLOR);
+	heightMap = imread("G:\\My Drive\\uni\\Topics-in-Graphics-and-Visual-Computing\\main\\Islands_of_the_Sentinel.png", IMREAD_COLOR);
 
 	return TRUE;
 }
