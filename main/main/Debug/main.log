@@ -1,0 +1,10 @@
+﻿  main.cpp
+c:\users\tzvig\source\repos\main\main\main.h(267): warning C4838: conversion from 'int' to 'BYTE' requires a narrowing conversion
+c:\users\tzvig\source\repos\main\main\triangle.h(38): warning C4244: 'argument': conversion from 'GLfloat' to 'int', possible loss of data
+c:\users\tzvig\source\repos\main\main\triangle.h(40): warning C4244: 'argument': conversion from 'GLfloat' to 'int', possible loss of data
+c:\users\tzvig\source\repos\main\main\triangle.h(42): warning C4244: 'argument': conversion from 'GLfloat' to 'int', possible loss of data
+c:\users\tzvig\source\repos\main\main\triangle.h(52): warning C4305: 'argument': truncation from 'double' to 'GLfloat'
+c:\users\tzvig\source\repos\main\main\triangle.h(141): warning C4244: 'return': conversion from 'int' to 'float', possible loss of data
+c:\users\tzvig\source\repos\main\main\triangle.h(155): warning C4305: 'initializing': truncation from 'double' to 'GLfloat'
+c:\users\tzvig\source\repos\main\main\main.cpp(52): warning C4018: '<': signed/unsigned mismatch
+  main.vcxproj -> C:\Users\tzvig\source\repos\main\Debug\main.exe
