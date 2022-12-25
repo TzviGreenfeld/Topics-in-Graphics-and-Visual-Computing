@@ -28,12 +28,7 @@ public:
 
 	void draw()
 	{
-	
-		if (leftmouse) {
-			drawIdColor();
-			return;
-		}
-
+		// set vertex color set it to wwhite if this.hit
 		glBegin(GL_TRIANGLES);
 		SetVertexColor(v1[1]);
 		glVertex3f(v1[0], v1[1], v1[2]);
@@ -103,7 +98,7 @@ public:
 		//glColor3f(r, g, b);
 		glColor3ub(r, g, b);
 
-		// daw as solid color
+		// draw as solid color
 		glBegin(GL_TRIANGLES);
 		glVertex3f(v1[0], v1[1], v1[2]);
 		glVertex3f(v2[0], v2[1], v2[2]);
@@ -112,6 +107,7 @@ public:
 	}
 
 	void pick() {
+		//hit = !hit;
 		hit = TRUE;
 		draw();
 		drawOutline();
@@ -147,8 +143,8 @@ private:
 		/// fcolor is the height of a vertex (y value) and sould be in range [0,61]
 		if (this->hit)
 		{
-			// paint it black if hit
-			glColor3f(0, 0, 0);
+			// paint it white if hit
+			glColor3f(1.0, 1.0, 1.0);
 			return;
 		}
 

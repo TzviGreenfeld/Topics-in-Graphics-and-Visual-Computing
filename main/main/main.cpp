@@ -24,37 +24,53 @@ void initTriangles()
 	}
 }
 
+
 void render()
 {
 	if (leftmouse)
 	{
-		// Switch to picking mode
-		//SwapBuffers(hDC);   
+		// Switch to picking mode  
 
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-		glDisable(GL_DEPTH_TEST);
 		pickingMode = TRUE;
 
-		// draw unique colors
+		GLint buffer;
+		glGetIntegerv(GL_DRAW_BUFFER, &buffer);
+		if (buffer == GL_FRONT) {
+			// Currently rendering to the front buffer
+			//glClearColor(0.0f, 0.0f, 0.0f, 0.5f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			SwapBuffers(hDC);
+		}
+		glDisable(GL_DEPTH_TEST);
 
+		// draw unique colors
 		for (unsigned int i = 0; i < triangles.size(); i++) {
 			triangles[i]->drawIdColor();
 		}
+
+		// adjust y value so the origin is bottom left instead of top left
+		int viewport[4];
+		glGetIntegerv(GL_VIEWPORT, viewport);
+		int y = viewport[3] - mouseY;
+
 		// read the pixel color under the mouse cursor
 		unsigned char pixel[3];
-		glReadPixels(mouseX, mouseY, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, pixel);
+		glReadPixels(mouseX, y, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, pixel);
 			
 		printf("Pixel values: %d %d %d\n", pixel[0], pixel[1], pixel[2]);
 
 		// look up the triangle id corresponding to the pixel color
-		int triangleID = Triangle::getTriangleID(pixel[0], pixel[2], pixel[2]);
+		int triangleID = Triangle::getTriangleID(pixel[0], pixel[1], pixel[2]);
 
 		if (triangleID >= 0 && triangleID < triangles.size()) {
 			// do something with picked trinagle here
 			triangles[triangleID]->pick();
-			//printf("Triangle (%d)->hit=%d\n", triangleID, triangles[triangleID]->hit);
+			printf("Triangle (%d)->hit=%d\n", triangleID, triangles[triangleID]->hit);
 		}
 
+		// return to front buffer
+		//SwapBuffers(hDC);   
+		
 	}
 	else
 	{
@@ -63,7 +79,6 @@ void render()
 		glEnable(GL_DEPTH_TEST);
 	}
 
-
 	for (unsigned int i = 0; i < triangles.size(); i++) {
 		triangles[i]->draw();
 	}
@@ -71,6 +86,7 @@ void render()
 	if (pickingMode) {
 		pickingMode = FALSE;
 	}
+	SwapBuffers(hDC);
 
 	/*
 	// delete triangles
@@ -78,8 +94,8 @@ void render()
 		delete triangles[i];
 	}
 	*/
-
 }
+
 
 
 int DrawGLScene(GLvoid)									// Here's Where We Do All The Drawing
@@ -87,9 +103,9 @@ int DrawGLScene(GLvoid)									// Here's Where We Do All The Drawing
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
-	gluLookAt(212, 60, 194,
-		186, 55, 171,
-		0, 1, 0);
+	gluLookAt(212, 60, 195,  // eye position
+			185, 55, 170,  // reference point position
+			0.0, 1.0, 0.0); // up vector direction
 	glScalef(scaleValue, scaleValue*HEIGHT_RATIO, scaleValue);
 
 	glTranslatef(256, 0.0, 256);
@@ -159,7 +175,7 @@ int WINAPI WinMain(HINSTANCE   hInstance,      // Instance
 			}
 			else if (active)            // Not Time To Quit, Update Screen
 			{
-				SwapBuffers(hDC);       // Swap Buffers (Double Buffering)
+				//SwapBuffers(hDC);       // Swap Buffers (Double Buffering)
 			}
 
 			if (keys[VK_F1])            // Is F1 Being Pressed?
@@ -186,7 +202,6 @@ int WINAPI WinMain(HINSTANCE   hInstance,      // Instance
 			if (keys[VK_W] || keys[VK_A] || keys[VK_S] || keys[VK_D]) {
 				rotate();
 			}
-
 			/*
 			if (leftmouse) {
 
