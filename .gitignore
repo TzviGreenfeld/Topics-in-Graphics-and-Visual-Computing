@@ -1,7 +1,0 @@
-**/.vs/
-**/Debug
-**/x64
-**/*.aps
-*.tlog
-*.obj
-.gitignore
