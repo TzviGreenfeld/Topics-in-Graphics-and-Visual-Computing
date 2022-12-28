@@ -1,9 +1,12 @@
 #include "main.h"
 #include "Triangle.h"
-
 bool pickingMode = FALSE;
+
 vector<Triangle *> triangles;
 vector<Triangle *> lowRestriangles;
+vector<int> pickedTriangles;
+
+
 
 void initTriangles(int stepSize)
 {
@@ -30,53 +33,17 @@ void initTriangles(int stepSize)
 			triangles.push_back(t2);
 
 			id += 2;
+
+			t1->debug = TRUE;
+			t2->debug = TRUE;
 		}
 	}
 }
-
-/*
-bool isAdjecentTriangles(Triangle *t1, Triangle *t2) {
-	return(
-
-		equal(begin(triangle1->v1), end(triangle1->v1), begin(triangle2->v1)) || equal(begin(triangle1->v1), end(triangle1->v1), begin(triangle2->v2)) || equal(begin(triangle1->v1), end(triangle1->v1), begin(triangle2->v3)) ||
-		equal(begin(triangle1->v2), end(triangle1->v2), begin(triangle2->v1)) || equal(begin(triangle1->v2), end(triangle1->v2), begin(triangle2->v2)) || equal(begin(triangle1->v2), end(triangle1->v2), begin(triangle2->v3)) ||
-		equal(begin(triangle1->v3), end(triangle1->v3), begin(triangle2->v1)) || equal(begin(triangle1->v3), end(triangle1->v3), begin(triangle2->v2)) || equal(begin(triangle1->v3), end(triangle1->v3), begin(triangle2->v3))
-		)
-
-}
-
-void initGraph() {
-	int n = triangles.size();
-	vector<vector<int>> graph;
-	graph.resize(n);
-	for (int i = 0; i < triangles.size(); ++i) {
-		const auto& triangle1 = triangles[i];
-		graph[i].resize(n);
-		for (int j = i + 1; j < triangles.size(); ++j) {
-			const auto& triangle2 = triangles[j];
-			if (
-				) {
-				graph[i].push_back(j);
-				graph[j].push_back(i);
-			}
-		}
-	}
-	for (const auto &inner : graph) {
-		for (const auto &x : inner) {
-			printf("%d ", x);
-		}
-		printf("\n");
-	}
-}
-*/
 
 void picking(int x, int y) {
-	/*
-	x: x mouse position when clicekd
-	y: y mouse position when clicekd
-	*/
-	// Switch to picking mode
+	/*x, y: xmouse position when clicek */
 
+	// Switch to picking mode
 	pickingMode = TRUE;
 	GLint buffer;
 	glGetIntegerv(GL_DRAW_BUFFER, &buffer);
@@ -110,9 +77,24 @@ void picking(int x, int y) {
 	{
 		// do something with picked trinagle here
 		triangles[triangleID]->pick();
-		printf("picked id = (%d)\n", triangleID, triangles[triangleID]->hit);
+		pickedTriangles.push_back(triangleID);
+
+		if (pickedTriangles.size() == 2) {
+			vector<int> path = graph->BFS(pickedTriangles[0], pickedTriangles[1]);
+			for (int node : path) {
+				triangles[node]->paint();
+			}
+			pickedTriangles.clear();
+		}
+
+		printf("picked id = (%d)\n", triangleID);
+		// paint neighbors as well
+		for (int neighbor : graph->getNeighbors(triangleID)) {
+
+			//triangles[neighbor]->pick();
+		}
 	}
-	//glEnable(GL_DEPTH_TEST);
+
 }
 
 void render()
@@ -154,6 +136,7 @@ int DrawGLScene(GLvoid) // Here's Where We Do All The Drawing
 	//TODO: make the transformation by map wisth and height
 	glTranslatef(0, 10.0 * upDownTransorm, 0); // up/down
 	glRotatef(leftRightRotate * 40, 0, 10, 0); // rotate with keyboard
+	glRotatef(diagonalRotate * 40, -1, 0, 1); // rotate with keyboard
 	glTranslatef(-MAP_WIDTH / 2, 0.0, -MAP_HEIGHT / 2);
 
 	render();
@@ -190,8 +173,10 @@ int WINAPI WinMain(HINSTANCE hInstance,		// Instance
 	}
 
 	initTriangles(STEP_SIZE);
-	//initGraph();
+	graph = new Graph(heightMap.rows, heightMap.cols, STEP_SIZE);
 	//printf("map dimensions: %d, %d", heightMap.rows, heightMap.cols);
+	printf("triangles.size=%d\n", triangles.size());
+
 
 
 	if (!CreateGLWindow((char *)"mini_project", WIDTH, HEIGHT, 16, fullscreen))
@@ -245,15 +230,6 @@ int WINAPI WinMain(HINSTANCE hInstance,		// Instance
 				handleInput();
 			}
 
-			/*
-			if (leftmouse) {
-
-				cout << mouseX;
-				cout << " ";
-				cout << mouseY << endl;
-
-			}
-			*/
 		}
 	}
 

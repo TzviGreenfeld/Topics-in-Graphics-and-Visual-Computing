@@ -9,6 +9,11 @@
 #include <stdio.h>
 #include <algorithm>
 
+#include "Graph.h"
+
+
+
+
 #pragma comment(lib, "opengl32.lib") 
 #pragma comment(lib, "glu32.lib")  
 #pragma warning(disable : 4996)
@@ -34,7 +39,7 @@ int WIDTH = 640, HEIGHT = 480; // window w, h
 // map
 int MAP_WIDTH = 0, MAP_HEIGHT = 0; // Size Of Our .RAW Height Map ( NEW )
 #define HEIGHT_RATIO 1.5f // Ratio That The Y Is Scaled According To The X And Z ( NEW )
-int STEP_SIZE = 70;
+int STEP_SIZE = 5;
 Mat heightMap;
 
 // key control
@@ -43,6 +48,9 @@ bool keys[256];      // Array Used For The Keyboard Routine
 #define VK_A 0x41
 #define VK_S 0x53
 #define VK_D 0x44
+
+#define VK_Q 0x51
+#define VK_E 0x45
 
 // left mouse botton
 bool leftmouse = FALSE;
@@ -57,13 +65,17 @@ bool pause = FALSE;
 // rotation and transformation
 float scaleValue = 0.25f;
 float leftRightRotate = 0.50f;
+float diagonalRotate = 0.005f;
 float upDownTransorm = 0.25f;
 
 // forward declaration
 void picking(int x, int y);
 //void rotateScene(int dx, int dy);
 
+// 20%
+Graph *graph;
 
+bool debug = FALSE;
 
 GLvoid ReSizeGLScene(GLsizei width, GLsizei height) // Resize And Initialize The GL Window
 {
@@ -97,6 +109,9 @@ int InitGL(GLvoid)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	return TRUE;
+
+	// init text library
+
 }
 
 GLvoid KillGLWindow(GLvoid) // Properly Kill The Window
@@ -388,20 +403,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	case WM_RBUTTONDOWN:
 	{
 		pause = TRUE;
-		// Right mouse button was pressed, start tracking mouse movement
-		GetCursorPos(&lastMousePos);
-		ScreenToClient(hWnd, &lastMousePos);
-		rightMouseDown = true;
-		return 0;
+
 	}
 	case WM_RBUTTONUP:
 	{
 		pause = FALSE;
-		// Right mouse button was released, stop tracking mouse movement
-		rightMouseDown = false;
-		rightMouse_dx = 0;
-		rightMouse_dy = 0;
-		return 0;
+
 	}
 	case WM_MOUSEMOVE:
 	{
@@ -481,13 +488,24 @@ void handleInput()
 	if (keys[VK_S])
 		upDownTransorm -= 0.05f;
 
+	// diagonal rotation
+	if (keys[VK_Q])
+		diagonalRotate += 0.01f;
+
+	if (keys[VK_E])
+		diagonalRotate -= 0.01f;
+
 	// up/down arrows or mousewheel for zoom
 	if (keys[VK_UP])
 		scaleValue += 0.001f;
 
 	if (keys[VK_DOWN])
 		scaleValue -= 0.001f;
+
+
 }
+
+
 
 
 
