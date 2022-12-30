@@ -61,10 +61,10 @@ public:
 
 	vector<int> getNeighbors(int i)
 	{
-		// return only the valid neighbors
 		vector<int> neighbors;
 		for (int neighbor : graph[i])
 		{
+			// return only the valid neighbors
 			if (neighbor != -1)
 			{
 				neighbors.push_back(neighbor);

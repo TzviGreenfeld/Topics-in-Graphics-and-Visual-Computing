@@ -1,4 +1,8 @@
 ﻿#pragma once
+#include <cmath>
+#include "globals.h"
+using namespace std;
+
 
 class Triangle
 {
@@ -41,15 +45,11 @@ public:
 
 		drawOutline();
 
-
-
 	}
 
 
 	void drawOutline()
 	{
-		// if not hit, black outline
-		//this->hit ? glColor3f(255, 255, 255) : glColor4f(0.0, 0.0, 0.0, 0.2);
 		glColor4f(0.0, 0.0, 0.0, 0.2);
 		glBegin(GL_LINE_LOOP);
 		glVertex3f(v1[0], v1[1], v1[2]);
@@ -106,7 +106,7 @@ public:
 		if (!&heightMap)
 			return 0;
 		// map values from [0,256] to [0, 61] in order to use the map in color_scale_01.png
-		return 61 * heightMap.at<Vec3b>(Point(y, x)).val[0] / 256;
+		return 61.0 * heightMap.at<Vec3b>(Point(y, x)).val[0] / 256.0;
 	}
 
 	void pick()
@@ -135,6 +135,8 @@ public:
 	}
 
 
+
+
 	void SetVertexColor(int fColor) // This Sets The Color Value For A Particular Index
 	{
 		if (this->userColor) {
@@ -148,7 +150,13 @@ public:
 			glColor3f(1.0, 1.0, 1.0);
 			return;
 		}
+		float height = fColor / 61.0;
 
+		float R = height;
+		float G = (1 - height) * (1 - abs(2 * height - 1));
+		float B = (1 - height) * abs(2 * height - 1);
+		glColor3f(R, G, B);
+		return;
 		GLfloat alpha = 1;
 		if (fColor < 15.8)
 		{
