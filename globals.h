@@ -76,6 +76,8 @@ void picking(int x, int y);
 // 20%
 Graph *graph;
 
+int fps = 120;
+// currently unused
 bool debug = FALSE;
-
+bool pickingMode = FALSE;
 #endif

@@ -1,11 +1,10 @@
 #include "main.h"
 #include "Triangle.h"
-bool pickingMode = FALSE;
+#include <chrono>
 
 vector<Triangle *> triangles;
 vector<Triangle *> lowRestriangles;
 vector<int> pickedTriangles;
-
 
 
 void initTriangles(int stepSize)
@@ -135,11 +134,9 @@ int DrawGLScene(GLvoid) // Here's Where We Do All The Drawing
 	glRotatef(diagonalRotate * 40, -1, 0, 1); // rotate with keyboard
 	glTranslatef(-MAP_WIDTH / 2, 0.0, -MAP_HEIGHT / 2);
 
-	render();
-
-
 	return TRUE;
 }
+
 
 void initScene() {
 
@@ -154,10 +151,14 @@ void initScene() {
 
 	//printf("map dimensions: %d, %d", heightMap.rows, heightMap.cols);
 	printf("triangles.size=%d\n", triangles.size());
+
+
 }
+
 
 void mainLoop() {
 	DrawGLScene();
+	render();
 	handleInput();
 }
 

@@ -270,9 +270,6 @@ int WINAPI WinMain(HINSTANCE hInstance,		// Instance
 	}
 
 
-
-
-
 	if (!CreateGLWindow((char *)"mini_project", WIDTH, HEIGHT, 16, fullscreen))
 	{
 		return 0; // Quit If Window Was Not Created
@@ -299,7 +296,18 @@ int WINAPI WinMain(HINSTANCE hInstance,		// Instance
 		// If There Are No Messages
 		else
 		{
+
+			chrono::milliseconds frame_duration(1000 / fps); // 60 FPS
+			auto last_frame_time = chrono::high_resolution_clock::now();
+
 			mainLoop();
+
+
+			auto current_time = std::chrono::high_resolution_clock::now();
+			auto elapsed_time = current_time - last_frame_time;
+			// Sleep for the remaining time until the next frame
+			this_thread::sleep_for(frame_duration - elapsed_time);
+			last_frame_time = current_time;
 		}
 	}
 
