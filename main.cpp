@@ -1,13 +1,45 @@
 #include "main.h"
 #include "Triangle.h"
+#include "Graph.h"
+
 #include <chrono>
 
-vector<Triangle *> triangles;
-vector<Triangle *> lowRestriangles;
 vector<int> pickedTriangles;
+vector<Triangle *> triangles;
+vector<Triangle *> lowResTriangles;
+Graph *lowResGraph;
+Graph *highResGraph;
 
+int translateRes(int id, bool lowToHigh) {
+	/*
+	returns id of triangle from lowResTriangles when given triangle from triangles
+	and vice versa
+	*/
+	printf("input id: %d\n", id);
+	if (!lowToHigh) {
+		for (auto &triangle : lowResTriangles) {
+			// middle of large in the given small
+			if (triangles[id]->isPointInTriangle(triangle->getCenter())) {
+				printf("output id: %d\n", triangle->id);
+				return triangle->id;
+			}
+		}
+	}
+	else
+	{
+		for (auto &triangle : triangles) {
+			// middle of large in the given small
+			if (triangle->isPointInTriangle(lowResTriangles[id]->getCenter())) {
+				printf("output id: %d\n", triangle->id);
+				return triangle->id;
+			}
+		}
 
-void initTriangles(int stepSize)
+	}
+	return -1;
+}
+
+void initTriangles(int stepSize, vector<Triangle *> &currTriangles)
 {
 
 	int cols = heightMap.cols;
@@ -22,13 +54,10 @@ void initTriangles(int stepSize)
 			Triangle *t2 = t1->getAdjecentTriangle();
 			t2->setID(id + 1);
 
-			triangles.push_back(t1);
-			triangles.push_back(t2);
+			currTriangles.push_back(t1);
+			currTriangles.push_back(t2);
 
 			id += 2;
-
-			t1->debug = TRUE;
-			t2->debug = TRUE;
 		}
 	}
 }
@@ -71,21 +100,23 @@ void picking(int x, int y) {
 		// do something with picked trinagle here
 		triangles[triangleID]->pick();
 		pickedTriangles.push_back(triangleID);
+		printf("picked id = (%d)\n", triangleID);
 
 		if (pickedTriangles.size() == 2) {
-			vector<int> path = graph->BFS(pickedTriangles[0], pickedTriangles[1]);
-			for (int node : path) {
-				triangles[node]->paint();
+			vector<int> path = lowResGraph->dijkstra(translateRes(pickedTriangles[0], FALSE), translateRes(pickedTriangles[1], FALSE));
+			printf("path[0]: %d\n", path[0]);
+			printf("path.size() %d\n", path.size());
+			for (int i = 1; i < path.size(); i++) {
+				printf("path[%d]: %d\n", i, path[i]);
+				vector<int> highResPath = highResGraph->BFS(translateRes(path[i - 1], TRUE), translateRes(path[i], TRUE));
+				for (int bfsNode : highResPath) {
+					printf("bfs_path[%d]: %d\n", bfsNode, highResPath[i]);
+					triangles[bfsNode]->paint();
+				}
 			}
 			pickedTriangles.clear();
 		}
 
-		printf("picked id = (%d)\n", triangleID);
-		// paint neighbors as well
-		for (int neighbor : graph->getNeighbors(triangleID)) {
-
-			//triangles[neighbor]->pick();
-		}
 	}
 
 }
@@ -146,8 +177,10 @@ void initScene() {
 
 	MAP_WIDTH = heightMap.cols;
 	MAP_HEIGHT = heightMap.rows;
-	initTriangles(STEP_SIZE);
-	graph = new Graph(heightMap.rows, heightMap.cols, STEP_SIZE);
+	initTriangles(STEP_SIZE, triangles);
+	initTriangles(30, lowResTriangles);
+	lowResGraph = new Graph(heightMap.rows, heightMap.cols, 30, lowResTriangles);
+	highResGraph = new Graph(heightMap.rows, heightMap.cols, STEP_SIZE, triangles);
 
 	//printf("map dimensions: %d, %d", heightMap.rows, heightMap.cols);
 	printf("triangles.size=%d\n", triangles.size());

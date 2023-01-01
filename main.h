@@ -1,6 +1,5 @@
 #include "globals.h"
 
-
 GLvoid ReSizeGLScene(GLsizei width, GLsizei height) // Resize And Initialize The GL Window
 {
 	if (height == 0) // Prevent A Divide By Zero By
@@ -288,7 +287,6 @@ int WINAPI WinMain(HINSTANCE hInstance,		// Instance
 			// If Not, Deal With Window Messages
 			else
 			{
-
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
 			}
@@ -296,12 +294,10 @@ int WINAPI WinMain(HINSTANCE hInstance,		// Instance
 		// If There Are No Messages
 		else
 		{
-
 			chrono::milliseconds frame_duration(1000 / fps); // 60 FPS
 			auto last_frame_time = chrono::high_resolution_clock::now();
 
 			mainLoop();
-
 
 			auto current_time = std::chrono::high_resolution_clock::now();
 			auto elapsed_time = current_time - last_frame_time;
@@ -391,27 +387,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	case WM_RBUTTONDOWN:
 	{
 		pause = TRUE;
-
 	}
 	case WM_RBUTTONUP:
 	{
 		pause = FALSE;
-
 	}
 	case WM_MOUSEMOVE:
 	{
-		if (rightMouseDown)
-		{
-			// Right mouse button is down, update the rotation based on the mouse movement
-			POINT cursorPos;
-			GetCursorPos(&cursorPos);
-			ScreenToClient(hWnd, &cursorPos);
-			rightMouse_dx = cursorPos.x - lastMousePos.x;
-			rightMouse_dy = cursorPos.y - lastMousePos.y;
 
-			// Update the last mouse position
-			lastMousePos = cursorPos;
-		}
 		return 0;
 	}
 	case WM_KEYDOWN: // Is A Key Being Held Down?

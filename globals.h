@@ -13,7 +13,6 @@
 #include <stdio.h>
 #include <algorithm>
 
-#include "Graph.h"
 
 #pragma comment(lib, "opengl32.lib") 
 #pragma comment(lib, "glu32.lib")  
@@ -40,7 +39,7 @@ int WIDTH = 640, HEIGHT = 480; // window w, h
 // map
 int MAP_WIDTH = 0, MAP_HEIGHT = 0; // Size Of Our .RAW Height Map ( NEW )
 #define HEIGHT_RATIO 1.5f // Ratio That The Y Is Scaled According To The X And Z ( NEW )
-int STEP_SIZE = 4;
+int STEP_SIZE = 5;
 Mat heightMap;
 
 // key control
@@ -74,10 +73,12 @@ void picking(int x, int y);
 //void rotateScene(int dx, int dy);
 
 // 20%
-Graph *graph;
 
 int fps = 120;
 // currently unused
 bool debug = FALSE;
 bool pickingMode = FALSE;
+
+
+
 #endif

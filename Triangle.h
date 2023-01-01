@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <cmath>
 #include "globals.h"
+#include "Vertex.h"
 using namespace std;
 
 
@@ -109,6 +110,15 @@ public:
 		return 61.0 * heightMap.at<Vec3b>(Point(y, x)).val[0] / 256.0;
 	}
 
+	float* getCenter() {
+		float * center = new float[3];
+		center[0] = (v1[0] + v2[0] + v3[0]) / 3;
+		center[1] = (v1[1] + v2[1] + v3[1]) / 3;
+		center[2] = (v1[2] + v2[2] + v3[2]) / 3;
+
+		return center;
+	}
+
 	void pick()
 	{
 		hit = !hit;
@@ -135,7 +145,39 @@ public:
 	}
 
 
+	// Calculate the area of the triangle formed by A, B, and C
+	float triangleArea(Point A, Point B, Point C) {
+		return std::abs((A.x * (B.y - C.y) + B.x * (C.y - A.y) + C.x * (A.y - B.y)) / 2);
+	}
 
+	// Check if point P is inside the triangle formed by A, B, and C
+	bool isPointInTriangle(float* mid) {
+		cout << mid[0] << endl;
+		cout << mid[1] << endl;
+		Point P;
+		P.x = mid[0];
+		P.y = mid[1];
+		// Calculate the area of the triangle formed by A, B, and C
+		Point A, B, C;
+		A.x = this->v1[0];
+		A.y = this->v1[1];
+
+		B.x = this->v2[0];
+		B.y = this->v2[1];
+
+		C.x = this->v3[0];
+		C.y = this->v3[1];
+		float triangleArea = this->triangleArea(A, B, C);
+
+		// Calculate the areas of the three triangles formed by P and the sides of the triangle
+		float areaPAB = this->triangleArea(P, A, B);
+		float areaPBC = this->triangleArea(P, B, C);
+		float areaPCA = this->triangleArea(P, C, A);
+
+		// If the sum of the areas of these three triangles is equal to the area of the original triangle,
+		// then P is inside the triangle
+		return std::abs(triangleArea - (areaPAB + areaPBC + areaPCA)) < 1e-9;
+	}
 
 	void SetVertexColor(int fColor) // This Sets The Color Value For A Particular Index
 	{
@@ -152,11 +194,7 @@ public:
 		}
 		float height = fColor / 61.0;
 
-		float R = height;
-		float G = (1 - height) * (1 - abs(2 * height - 1));
-		float B = (1 - height) * abs(2 * height - 1);
-		glColor3f(R, G, B);
-		return;
+
 		GLfloat alpha = 1;
 		if (fColor < 15.8)
 		{
