@@ -24,7 +24,7 @@ public:
 		if (raining) {
 			for (int i = 0; i < drops.size(); i++) {
 				RainDrop d = drops[i];
-				glColor4f(0.5, 0.5, 1.0, d.y / 61.0);
+				glColor4f(0.0, 0.0, 1., d.y / 61.0);
 				glBegin(GL_LINES);
 				glVertex3f(d.x, d.y, d.z);
 				glVertex3f(d.x, d.y - 0.5, d.z);
@@ -43,8 +43,6 @@ public:
 		raining = !raining;
 	}
 
-
-
 	typedef struct {
 		float initalHeight;
 		float slowRate;
@@ -62,19 +60,25 @@ public:
 
 	void initFog() {
 		GLfloat fogColor[4] = { 0.5, 0.5, 0.5, 0.2 };
-		//glClearColor(0.5, 0.5, 0.5, 0.2);
+		if (fogIntensity > 0.0) {
+			glClearColor(0.5, 0.5, 0.5, 0.2);
+		}
 		glFogi(GL_FOG_MODE, GL_EXP2);
 		glFogfv(GL_FOG_COLOR, fogColor);
 		glFogf(GL_FOG_DENSITY, fogIntensity);
 		glHint(GL_FOG_HINT, GL_DONT_CARE);
 		glFogf(GL_FOG_START, 1.0f);
-		glFogf(GL_FOG_END, 25.0f);
+		glFogf(GL_FOG_END, 50.0f);
 		glEnable(GL_FOG);
 		glFogi(GL_FOG_MODE, GL_EXP2);
 	}
 
 	void addFog() {
 		fogIntensity += 0.01;
+	}
+	void subtractFog() {
+		//fogIntensity -= 0.01;
+		fogIntensity = 0.0;
 	}
 
 

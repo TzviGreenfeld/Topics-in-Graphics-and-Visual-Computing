@@ -54,6 +54,8 @@ bool keys[256];      // Array Used For The Keyboard Routine
 
 #define VK_R 0x52
 #define VK_F 0x46
+#define VK_G 0x47
+
 
 // left mouse botton
 bool leftmouse = FALSE;

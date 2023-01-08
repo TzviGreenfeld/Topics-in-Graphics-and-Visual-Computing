@@ -55,10 +55,16 @@ void handleInput()
 		weather->rain();
 	}
 
+	if (keys[VK_G]) {
+		delay(100);
+		weather->subtractFog();
+	}
+
 	if (keys[VK_F]) {
 		delay(100);
 		weather->addFog();
 	}
+
 }
 
 void initTriangles(int stepSize, vector<Triangle *> &currTriangles)
@@ -183,18 +189,19 @@ void render()
 		triangles[x]->paint();
 	}
 
-	for (unsigned int i = 0; i < triangles.size(); i++)D
+	for (unsigned int i = 0; i < triangles.size(); i++)
 	{
 		if (triangles[i])
 			triangles[i]->draw();
 	}
-		if (keys[VK_RIGHT]) {
-			//if (TRUE) {
-			for (unsigned int i = 0; i < lowResTriangles.size(); i++)
-			{
-				lowResTriangles[i]->drawRedThickOutline();
-			}
+	if (keys[VK_RIGHT]) {
+		//if (TRUE) {
+		for (unsigned int i = 0; i < lowResTriangles.size(); i++)
+		{
+			lowResTriangles[i]->drawRedThickOutline();
 		}
+	}
+	weather->renderRain();
 
 	if (pickingMode)
 	{
@@ -202,7 +209,6 @@ void render()
 	}
 
 	SwapBuffers(hDC);
-	weather->renderRain();
 	weather->initFog();
 
 }
@@ -210,9 +216,9 @@ void render()
 
 void initScene() {
 
-	heightMap = imread("C:\\Users\\tzvig\\source\\repos\\main\\Islands_of_the_Sentinel.png", IMREAD_COLOR);
-	//heightMap = imread("C:\\Users\\tzvig\\source\\repos\\main\\Heightmap.png", IMREAD_COLOR);
-	//heightMap = imread("C:\\Users\\tzvig\\source\\repos\\main\\4kHmap.png", IMREAD_COLOR);
+	//heightMap = imread("C:\\Users\\tzvig\\source\\repos\\main\\Islands_of_the_Sentinel.png", IMREAD_COLOR);
+	//heightMap = imread("C:\\Users\\tzvig\\source\\repos\\main\\heightMap3.jpeg", IMREAD_COLOR);
+	heightMap = imread("C:\\Users\\tzvig\\source\\repos\\main\\heightMap4.jpeg", IMREAD_COLOR);
 
 	MAP_WIDTH = heightMap.cols;
 	MAP_HEIGHT = heightMap.rows;
