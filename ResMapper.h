@@ -70,10 +70,6 @@ public:
 		int lowResStepSize = lowResTriangles[0]->stepSize;
 		int highResStepSize = triangles[0]->stepSize;
 
-		Triangle* largeTriangle = lowResTriangles[id];
-		int sx = largeTriangle->x;
-		int sy = largeTriangle->y;
-
 		for (auto& smallTriangle : triangles) {
 			if (isPointInTriangle_LtoS(id, smallTriangle->id)) {
 				return smallTriangle->id;

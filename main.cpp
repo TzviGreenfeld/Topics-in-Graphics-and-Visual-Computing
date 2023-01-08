@@ -54,6 +54,11 @@ void handleInput()
 		delay(100);
 		weather->rain();
 	}
+
+	if (keys[VK_F]) {
+		delay(100);
+		weather->addFog();
+	}
 }
 
 void initTriangles(int stepSize, vector<Triangle *> &currTriangles)
@@ -165,8 +170,6 @@ void picking(int x, int y) {
 		}
 
 	}
-
-
 }
 
 void render()
@@ -180,26 +183,27 @@ void render()
 		triangles[x]->paint();
 	}
 
-	for (unsigned int i = 0; i < triangles.size(); i++)
+	for (unsigned int i = 0; i < triangles.size(); i++)D
 	{
 		if (triangles[i])
 			triangles[i]->draw();
 	}
-	if (keys[VK_RIGHT]) {
-		//if (TRUE) {
-		for (unsigned int i = 0; i < lowResTriangles.size(); i++)
-		{
-			lowResTriangles[i]->drawRedThickOutline();
+		if (keys[VK_RIGHT]) {
+			//if (TRUE) {
+			for (unsigned int i = 0; i < lowResTriangles.size(); i++)
+			{
+				lowResTriangles[i]->drawRedThickOutline();
+			}
 		}
-	}
-	weather->renderRain();
 
 	if (pickingMode)
 	{
 		pickingMode = FALSE;
 	}
-	SwapBuffers(hDC);
 
+	SwapBuffers(hDC);
+	weather->renderRain();
+	weather->initFog();
 
 }
 

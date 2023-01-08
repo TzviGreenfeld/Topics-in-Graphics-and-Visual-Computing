@@ -71,6 +71,8 @@ public:
 
 	void drawIdColor()
 	{
+		glDisable(GL_FOG);
+
 		int i = id;
 		// unique color by openGL doc
 		int r = (i & 0x000000FF) >> 0;
@@ -91,6 +93,8 @@ public:
 		glVertex3f(v2[0], v2[1], v2[2]);
 		glVertex3f(v3[0], v3[1], v3[2]);
 		glEnd();
+
+		glEnable(GL_FOG);
 	}
 
 	Triangle *getAdjecentTriangle()
@@ -160,8 +164,6 @@ public:
 		return res;
 
 	}
-
-
 
 	void unpaint() {
 		this->hit = FALSE;
