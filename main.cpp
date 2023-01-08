@@ -1,42 +1,59 @@
 #include "main.h"
 #include "Triangle.h"
 #include "Graph.h"
-
+#include "Weather.h"
+#include "ResMapper.h"
+#include <thread>
 #include <chrono>
 
 vector<int> pickedTriangles;
 vector<Triangle *> triangles;
 vector<Triangle *> lowResTriangles;
+ResMapper *resMapper;
 Graph *lowResGraph;
 Graph *highResGraph;
+Weather *weather;
 
-int translateRes(int id, bool lowToHigh) {
-	/*
-	returns id of triangle from lowResTriangles when given triangle from triangles
-	and vice versa
-	*/
-	printf("input id: %d\n", id);
-	if (!lowToHigh) {
-		for (auto &triangle : lowResTriangles) {
-			// middle of large in the given small
-			if (triangles[id]->isPointInTriangle(triangle->getCenter())) {
-				printf("output id: %d\n", triangle->id);
-				return triangle->id;
-			}
-		}
-	}
-	else
-	{
-		for (auto &triangle : triangles) {
-			// middle of large in the given small
-			if (triangle->isPointInTriangle(lowResTriangles[id]->getCenter())) {
-				printf("output id: %d\n", triangle->id);
-				return triangle->id;
-			}
-		}
 
+
+void delay(int milliseconds) {
+	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+}
+
+void handleInput()
+{
+	// wasd for rotation
+	if (keys[VK_A])
+		leftRightRotate += 0.01f;
+
+	if (keys[VK_D])
+		leftRightRotate -= 0.01f;
+
+	if (keys[VK_W])
+		upDownTransorm += 0.5f;
+
+	if (keys[VK_S])
+		upDownTransorm -= 0.5f;
+
+	// diagonal rotation
+	if (keys[VK_Q])
+		diagonalRotate += 0.01f;
+
+	if (keys[VK_E])
+		diagonalRotate -= 0.01f;
+
+	// up/down arrows or mousewheel for zoom
+	if (keys[VK_UP])
+		scaleValue += 0.001f;
+
+	if (keys[VK_DOWN])
+		scaleValue -= 0.001f;
+
+	// Mesh Refinement with spacebar
+	if (keys[VK_R]) {
+		delay(100);
+		weather->rain();
 	}
-	return -1;
 }
 
 void initTriangles(int stepSize, vector<Triangle *> &currTriangles)
@@ -49,7 +66,7 @@ void initTriangles(int stepSize, vector<Triangle *> &currTriangles)
 	{
 		for (int y = 0; y < (cols - stepSize); y += stepSize)
 		{
-			Triangle *t1 = new Triangle(x, y);
+			Triangle *t1 = new Triangle(x, y, stepSize);
 			t1->setID(id);
 			Triangle *t2 = t1->getAdjecentTriangle();
 			t2->setID(id + 1);
@@ -62,8 +79,10 @@ void initTriangles(int stepSize, vector<Triangle *> &currTriangles)
 	}
 }
 
+
+
 void picking(int x, int y) {
-	/*x, y: xmouse position when clicek */
+	/*x, y: xmouse position when click */
 
 	// Switch to picking mode
 	pickingMode = TRUE;
@@ -95,29 +114,58 @@ void picking(int x, int y) {
 	// look up the triangle id corresponding to the pixel color
 	int triangleID = Triangle::getTriangleID(pixel[0], pixel[1], pixel[2]);
 
-	if (triangleID >= 0 && triangleID < triangles.size())
-	{
-		// do something with picked trinagle here
+	if (triangleID >= 0 && triangleID < triangles.size()) {
 		triangles[triangleID]->pick();
-		pickedTriangles.push_back(triangleID);
-		printf("picked id = (%d)\n", triangleID);
-
-		if (pickedTriangles.size() == 2) {
-			vector<int> path = lowResGraph->dijkstra(translateRes(pickedTriangles[0], FALSE), translateRes(pickedTriangles[1], FALSE));
-			printf("path[0]: %d\n", path[0]);
-			printf("path.size() %d\n", path.size());
-			for (int i = 1; i < path.size(); i++) {
-				printf("path[%d]: %d\n", i, path[i]);
-				vector<int> highResPath = highResGraph->BFS(translateRes(path[i - 1], TRUE), translateRes(path[i], TRUE));
-				for (int bfsNode : highResPath) {
-					printf("bfs_path[%d]: %d\n", bfsNode, highResPath[i]);
-					triangles[bfsNode]->paint();
-				}
-			}
-			pickedTriangles.clear();
+		int largeTriangleId = resMapper->smallToLarge(triangleID);
+		printf("small id %d\nlarge id %d\n", triangleID, largeTriangleId);
+		if (largeTriangleId >= 0 && largeTriangleId < lowResTriangles.size()) {
+			lowResTriangles[largeTriangleId]->pick();
 		}
 
 	}
+
+	if (triangleID >= 0 && triangleID < triangles.size())
+	{
+		// do something with picked trinagle here
+		pickedTriangles.push_back(triangleID);
+
+		if (pickedTriangles.size() == 2) {
+			// clear previous path
+			for (auto& t : triangles) {
+				t->unpaint();
+			}
+
+			vector<int> path = lowResGraph->dijkstra(resMapper->smallToLarge(pickedTriangles[0]), resMapper->smallToLarge(pickedTriangles[1]));
+			//vector<int> path = highResGraph->dijkstra(pickedTriangles[0], pickedTriangles[1]);
+			/*vector<int> path;
+			for (int j = 0; j < originalPath.size(); j += 2) {
+				path.push_back(originalPath[j]);
+			} */
+
+			for (int i = 1; i < path.size() + 1; i++) {
+				vector<int> highResPath;
+				if (i == 0) {
+					highResPath = highResGraph->BFS(pickedTriangles[0], resMapper->largeToSmall(path[i]));
+				}
+				else if (i == path.size()) {
+					highResPath = highResGraph->BFS(resMapper->largeToSmall(path[i - 1]), pickedTriangles[1]);
+				}
+				else {
+					highResPath = highResGraph->BFS(resMapper->largeToSmall(path[i - 1]), resMapper->largeToSmall(path[i]));
+				}
+				for (int bfsNode : highResPath) {
+					//printf("%d\n", bfsNode);
+					triangles[bfsNode]->paint();
+				}
+				highResPath.clear();
+			}
+			pickedTriangles.clear();
+			path.clear();
+
+		}
+
+	}
+
 
 }
 
@@ -137,35 +185,22 @@ void render()
 		if (triangles[i])
 			triangles[i]->draw();
 	}
+	if (keys[VK_RIGHT]) {
+		//if (TRUE) {
+		for (unsigned int i = 0; i < lowResTriangles.size(); i++)
+		{
+			lowResTriangles[i]->drawRedThickOutline();
+		}
+	}
+	weather->renderRain();
 
 	if (pickingMode)
 	{
 		pickingMode = FALSE;
 	}
 	SwapBuffers(hDC);
-}
 
-int DrawGLScene(GLvoid) // Here's Where We Do All The Drawing
-{
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glLoadIdentity();
-
-	gluLookAt(212, 60, 195,	  // eye position
-		185, 55, 170,	  // reference point position
-		0.0, 1.0, 0.0); // up vector direction
-
-	glScalef(scaleValue, scaleValue * HEIGHT_RATIO, scaleValue);
-
-	glTranslatef(MAP_WIDTH / 2, 0.0, MAP_HEIGHT / 2);
-	drawAxis();
-	//TODO: make the transformation by map wisth and height
-	glTranslatef(0, 10.0 * upDownTransorm, 0); // up/down
-	glRotatef(leftRightRotate * 40, 0, 10, 0); // rotate with keyboard
-	glRotatef(diagonalRotate * 40, -1, 0, 1); // rotate with keyboard
-	glTranslatef(-MAP_WIDTH / 2, 0.0, -MAP_HEIGHT / 2);
-
-	return TRUE;
 }
 
 
@@ -182,12 +217,48 @@ void initScene() {
 	lowResGraph = new Graph(heightMap.rows, heightMap.cols, 30, lowResTriangles);
 	highResGraph = new Graph(heightMap.rows, heightMap.cols, STEP_SIZE, triangles);
 
+	resMapper = new ResMapper(triangles, lowResTriangles);
+
+	weather = new Weather;
+	weather->initRain();
+
 	//printf("map dimensions: %d, %d", heightMap.rows, heightMap.cols);
+	allowPrinting();
 	printf("triangles.size=%d\n", triangles.size());
+	printf("lowResTriangles.size=%d\n", lowResTriangles.size());
 
 
 }
 
+int DrawGLScene(GLvoid) // Here's Where We Do All The Drawing
+{
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glLoadIdentity();
+
+	gluLookAt(212, 60, 195,	  // eye position
+		185, 55, 170,	  // reference point position
+		0.0, 1.0, 0.0); // up vector direction
+	glScalef(scaleValue, scaleValue * HEIGHT_RATIO, scaleValue);
+
+	/*
+	float val = 1.0 / (2.0 * STEP_SIZE);
+	gluLookAt(MAP_WIDTH * val, 80.0, MAP_HEIGHT * val,
+		MAP_WIDTH / 2.0, -10.0, MAP_HEIGHT / 2.0,
+		0.0, 1.0, 0.0);
+	*/
+
+
+	glTranslatef(MAP_WIDTH / 2, 0.0, MAP_HEIGHT / 2);
+	//drawAxis();
+	//TODO: make the transformation by map wisth and height
+	glTranslatef(0, 10.0 * upDownTransorm, 0); // up/down
+	glRotatef(leftRightRotate * 40, 0, 10, 0); // rotate with keyboard
+	glRotatef(diagonalRotate * 40, -1, 0, 1); // rotate with keyboard
+	glTranslatef(-MAP_WIDTH / 2, 0.0, -MAP_HEIGHT / 2);
+
+	return TRUE;
+}
 
 void mainLoop() {
 	DrawGLScene();

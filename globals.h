@@ -39,7 +39,7 @@ int WIDTH = 640, HEIGHT = 480; // window w, h
 // map
 int MAP_WIDTH = 0, MAP_HEIGHT = 0; // Size Of Our .RAW Height Map ( NEW )
 #define HEIGHT_RATIO 1.5f // Ratio That The Y Is Scaled According To The X And Z ( NEW )
-int STEP_SIZE = 5;
+int STEP_SIZE = 15;
 Mat heightMap;
 
 // key control
@@ -51,6 +51,9 @@ bool keys[256];      // Array Used For The Keyboard Routine
 
 #define VK_Q 0x51
 #define VK_E 0x45
+
+#define VK_R 0x52
+#define VK_F 0x46
 
 // left mouse botton
 bool leftmouse = FALSE;

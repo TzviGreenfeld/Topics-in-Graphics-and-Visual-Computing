@@ -1,20 +1,20 @@
 ﻿#pragma once
 #include <cmath>
 #include "globals.h"
-#include "Vertex.h"
 using namespace std;
 
 
 class Triangle
 {
 public:
-	Triangle(const GLfloat v1[3], const GLfloat v2[3], const GLfloat v3[3])
+	Triangle(const GLfloat v1[3], const GLfloat v2[3], const GLfloat v3[3], int stepSize)
 		: v1{ v1[0], v1[1], v1[2] },
 		v2{ v2[0], v2[1], v2[2] },
-		v3{ v3[0], v3[1], v3[2] } {}
+		v3{ v3[0], v3[1], v3[2] },
+		stepSize(stepSize){}
 
-	Triangle(const int x, const int y)
-		: x(x), y(y)
+	Triangle(const int x, const int y, int stepSize)
+		: x(x), y(y), stepSize(stepSize)
 	{
 		// x1, y1, z1
 		v1[0] = float(x);
@@ -22,14 +22,14 @@ public:
 		v1[2] = float(y);
 
 		// x2, y2, z2
-		v2[0] = float(x) + STEP_SIZE;
-		v2[1] = height(x + STEP_SIZE, y);
+		v2[0] = float(x) + stepSize;
+		v2[1] = height(x + stepSize, y);
 		v2[2] = float(y);
 
 		// x3, y3, z3
 		v3[0] = float(x);
-		v3[1] = height(x, y + STEP_SIZE);
-		v3[2] = float(y) + STEP_SIZE;
+		v3[1] = height(x, y + stepSize);
+		v3[2] = float(y) + stepSize;
 	}
 
 	void draw()
@@ -45,13 +45,23 @@ public:
 		glEnd();
 
 		drawOutline();
-
 	}
 
 
 	void drawOutline()
 	{
 		glColor4f(0.0, 0.0, 0.0, 0.2);
+		glBegin(GL_LINE_LOOP);
+		glVertex3f(v1[0], v1[1], v1[2]);
+		glVertex3f(v2[0], v2[1], v2[2]);
+		glVertex3f(v3[0], v3[1], v3[2]);
+		glEnd();
+	}
+	void drawRedThickOutline()
+	{
+		this->hit ? glColor4f(0.0, 0.0, 1.0, 0.5) : glColor4f(1.0, 0.0, 0.0, 0.5);
+		glLineWidth(2);
+
 		glBegin(GL_LINE_LOOP);
 		glVertex3f(v1[0], v1[1], v1[2]);
 		glVertex3f(v2[0], v2[1], v2[2]);
@@ -88,10 +98,10 @@ public:
 
 		GLfloat adj_v1[3] = { v3[0], v3[1], v3[2] };
 		GLfloat adj_v2[3] = { v2[0], v2[1], v2[2] };
-		GLfloat adj_v3[3] = { float(x) + STEP_SIZE, height(x + STEP_SIZE, y + STEP_SIZE), float(y) + STEP_SIZE };
+		GLfloat adj_v3[3] = { float(x) + stepSize, height(x + stepSize, y + stepSize), float(y) + stepSize };
 
-		Triangle *res = new Triangle(adj_v1, adj_v2, adj_v3);
-		res->setXY(x, y);
+		Triangle *res = new Triangle(adj_v1, adj_v2, adj_v3, stepSize);
+		res->setXY(x + stepSize, y + stepSize);
 		return res;
 	}
 
@@ -110,12 +120,10 @@ public:
 		return 61.0 * heightMap.at<Vec3b>(Point(y, x)).val[0] / 256.0;
 	}
 
-	float* getCenter() {
-		float * center = new float[3];
-		center[0] = (v1[0] + v2[0] + v3[0]) / 3;
-		center[1] = (v1[1] + v2[1] + v3[1]) / 3;
-		center[2] = (v1[2] + v2[2] + v3[2]) / 3;
-
+	array<float, 3> getCenter() {
+		array<float, 3> center = { (v1[0] + v2[0] + v3[0]) / 3.0,
+			(v1[1] + v2[1] + v3[1]) / 3.0,
+			(v1[2] + v2[2] + v3[2]) / 3.0 };
 		return center;
 	}
 
@@ -144,40 +152,22 @@ public:
 		return i;
 	}
 
+	static double triangleArea(Point p1, Point p2, Point p3) {
+		// A = | (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 2 |
+		float res = abs(
+			(p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y)) / 2.0
+		);
+		return res;
 
-	// Calculate the area of the triangle formed by A, B, and C
-	float triangleArea(Point A, Point B, Point C) {
-		return std::abs((A.x * (B.y - C.y) + B.x * (C.y - A.y) + C.x * (A.y - B.y)) / 2);
 	}
 
-	// Check if point P is inside the triangle formed by A, B, and C
-	bool isPointInTriangle(float* mid) {
-		cout << mid[0] << endl;
-		cout << mid[1] << endl;
-		Point P;
-		P.x = mid[0];
-		P.y = mid[1];
-		// Calculate the area of the triangle formed by A, B, and C
-		Point A, B, C;
-		A.x = this->v1[0];
-		A.y = this->v1[1];
 
-		B.x = this->v2[0];
-		B.y = this->v2[1];
 
-		C.x = this->v3[0];
-		C.y = this->v3[1];
-		float triangleArea = this->triangleArea(A, B, C);
-
-		// Calculate the areas of the three triangles formed by P and the sides of the triangle
-		float areaPAB = this->triangleArea(P, A, B);
-		float areaPBC = this->triangleArea(P, B, C);
-		float areaPCA = this->triangleArea(P, C, A);
-
-		// If the sum of the areas of these three triangles is equal to the area of the original triangle,
-		// then P is inside the triangle
-		return std::abs(triangleArea - (areaPAB + areaPBC + areaPCA)) < 1e-9;
+	void unpaint() {
+		this->hit = FALSE;
+		this->userColor = FALSE;
 	}
+
 
 	void SetVertexColor(int fColor) // This Sets The Color Value For A Particular Index
 	{
@@ -246,6 +236,14 @@ public:
 		GLubyte b;
 	};
 
+	float sign(float x1, float y1, float x2, float y2, float x3, float y3) {
+		return (x1 - x3) * (y2 - y3) - (x2 - x3) * (y1 - y3);
+	}
+
+
+
+
+
 	GLfloat v1[3], v2[3], v3[3];
 	int x, y;
 	int id;
@@ -253,4 +251,5 @@ public:
 	bool hit = FALSE;
 	bool userColor = FALSE;
 	bool debug = FALSE;
+	int stepSize;
 };

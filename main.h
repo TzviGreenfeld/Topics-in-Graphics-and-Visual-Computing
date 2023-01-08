@@ -259,15 +259,6 @@ int WINAPI WinMain(HINSTANCE hInstance,		// Instance
 
 	fullscreen = FALSE; // Windowed Mode
 
-	bool printing = TRUE;
-	if (printing)
-	{
-		AllocConsole();
-		freopen("CONIN$", "r", stdin);
-		freopen("CONOUT$", "w", stdout);
-		freopen("CONOUT$", "w", stderr);
-	}
-
 
 	if (!CreateGLWindow((char *)"mini_project", WIDTH, HEIGHT, 16, fullscreen))
 	{
@@ -420,6 +411,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
+void allowPrinting() {
+
+	AllocConsole();
+	freopen("CONIN$", "r", stdin);
+	freopen("CONOUT$", "w", stdout);
+	freopen("CONOUT$", "w", stderr);
+}
+
 void drawAxis()
 {
 	// Draw the x-axis in red
@@ -444,43 +443,7 @@ void drawAxis()
 	glEnd();
 }
 
-void handleInput()
-{
-	// wasd for rotation
-	if (keys[VK_A])
-		leftRightRotate += 0.01f;
 
-	if (keys[VK_D])
-		leftRightRotate -= 0.01f;
-
-	if (keys[VK_W])
-		upDownTransorm += 0.05f;
-
-	if (keys[VK_S])
-		upDownTransorm -= 0.05f;
-
-	// diagonal rotation
-	if (keys[VK_Q])
-		diagonalRotate += 0.01f;
-
-	if (keys[VK_E])
-		diagonalRotate -= 0.01f;
-
-	// up/down arrows or mousewheel for zoom
-	if (keys[VK_UP])
-		scaleValue += 0.001f;
-
-	if (keys[VK_DOWN])
-		scaleValue -= 0.001f;
-
-	// Mesh Refinement with spacebar
-	if (keys[VK_SPACE]) {
-		STEP_SIZE -= 1;
-		//changeRes();
-
-	}
-
-}
 
 
 

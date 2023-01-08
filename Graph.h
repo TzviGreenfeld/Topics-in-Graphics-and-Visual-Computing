@@ -12,14 +12,14 @@ public:
 		this->rows = int(rows / stepSize) * 2;
 		this->cols = int(cols / stepSize);
 		this->triangles = triangles;
-		this->n = this->rows * this->cols;
+		this->n = triangles.size();
 		printf("rows: %d, cols: %d, n: %d\n", this->rows, this->cols, n);
 
 		// the graph is for triangles, we can init n nodes with 3 neighbors
 		this->graph = vector<vector<int>>(n, vector<int>(3, -1));
 
 		// init the graph
-		for (int i = 0; i < n; i++)
+		for (int i = 0; i < triangles.size(); i++)
 		{
 			// if i - 1 is in the same row, then i - 1 is the left neighbor
 			if (sameRow(i, i - 1) && inBounds(i - 1))
@@ -60,7 +60,7 @@ public:
 	{
 		int row = i / cols;
 		int col = i % cols;
-		return row >= 0 && row < rows && col >= 0 && col < cols;
+		return row >= 0 && row < rows && col >= 0 && col < cols && i < n;
 	}
 
 	vector<int> getNeighbors(int i)
@@ -77,17 +77,18 @@ public:
 		return neighbors;
 	}
 
-	float EuclideanDistance(float* p1, float* p2) {
+
+	float EuclideanDistance(array<float, 3> p1, array<float, 3> p2) {
 		float dx = p1[0] - p2[0];
 		float dy = p1[1] - p2[1];
 		float dz = p1[2] - p2[2];
-		return sqrt(dx * dx + 100 * (dy * dy) + dz * dz);
+		return sqrt(dx * dx + 100.0 * (dy * dy) + dz * dz);
 
 	}
 
 	void initWeights() {
-		this->weights = vector<vector<int>>(n, vector<int>(3, -1));
-
+		// init weights with -1
+		this->weights = vector<vector<float>>(n, vector<float>(3, -1));
 
 		for (unsigned int i = 0; i < graph.size(); i++) {
 			for (unsigned int j = 0; j < 3; j++) {
@@ -182,9 +183,15 @@ public:
 		}
 		path.push_back(start);
 		reverse(path.begin(), path.end());
-
+		printf("dijkstra done1\n");
+		for (int i = 0; i < path.size(); i++) {
+			printf("%d\n", path.at(i));
+		}
+		printf("dijkstra done2\n");
 		return path;
+
 	}
+
 
 	vector<int> BFS(int i, int j)
 	{
@@ -246,7 +253,7 @@ public:
 	int n;
 	int rows, cols, stepSize;
 	vector<vector<int>> graph;
-	vector<vector<int>> weights;
+	vector<vector<float>> weights;
 	vector<Triangle *> triangles;
 };
 
