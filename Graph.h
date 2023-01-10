@@ -183,11 +183,7 @@ public:
 		}
 		path.push_back(start);
 		reverse(path.begin(), path.end());
-		printf("dijkstra done1\n");
-		for (int i = 0; i < path.size(); i++) {
-			printf("%d\n", path.at(i));
-		}
-		printf("dijkstra done2\n");
+
 		return path;
 
 	}

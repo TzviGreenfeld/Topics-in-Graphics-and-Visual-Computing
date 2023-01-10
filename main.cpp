@@ -146,14 +146,14 @@ void picking(int x, int y) {
 				t->unpaint();
 			}
 
-			vector<int> path = lowResGraph->dijkstra(resMapper->smallToLarge(pickedTriangles[0]), resMapper->smallToLarge(pickedTriangles[1]));
+			vector<int> originalPath = lowResGraph->dijkstra(resMapper->smallToLarge(pickedTriangles[0]), resMapper->smallToLarge(pickedTriangles[1]));
 			//vector<int> path = highResGraph->dijkstra(pickedTriangles[0], pickedTriangles[1]);
-			/*vector<int> path;
+			vector<int> path;
 			for (int j = 0; j < originalPath.size(); j += 2) {
 				path.push_back(originalPath[j]);
-			} */
+			}
 
-			for (int i = 1; i < path.size() + 1; i++) {
+			for (int i = 0; i < path.size() + 1; i++) {
 				vector<int> highResPath;
 				if (i == 0) {
 					highResPath = highResGraph->BFS(pickedTriangles[0], resMapper->largeToSmall(path[i]));
@@ -217,14 +217,14 @@ void render()
 void initScene() {
 
 	//heightMap = imread("C:\\Users\\tzvig\\source\\repos\\main\\Islands_of_the_Sentinel.png", IMREAD_COLOR);
-	//heightMap = imread("C:\\Users\\tzvig\\source\\repos\\main\\heightMap3.jpeg", IMREAD_COLOR);
-	heightMap = imread("C:\\Users\\tzvig\\source\\repos\\main\\heightMap4.jpeg", IMREAD_COLOR);
+	heightMap = imread("C:\\Users\\tzvig\\source\\repos\\main\\heightMap3.jpeg", IMREAD_COLOR);
+	//heightMap = imread("C:\\Users\\tzvig\\source\\repos\\main\\heightMap4.jpeg", IMREAD_COLOR);
 
 	MAP_WIDTH = heightMap.cols;
 	MAP_HEIGHT = heightMap.rows;
 	initTriangles(STEP_SIZE, triangles);
-	initTriangles(30, lowResTriangles);
-	lowResGraph = new Graph(heightMap.rows, heightMap.cols, 30, lowResTriangles);
+	initTriangles(2 * STEP_SIZE, lowResTriangles);
+	lowResGraph = new Graph(heightMap.rows, heightMap.cols, 2 * STEP_SIZE, lowResTriangles);
 	highResGraph = new Graph(heightMap.rows, heightMap.cols, STEP_SIZE, triangles);
 
 	resMapper = new ResMapper(triangles, lowResTriangles);

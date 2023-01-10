@@ -39,7 +39,7 @@ int WIDTH = 640, HEIGHT = 480; // window w, h
 // map
 int MAP_WIDTH = 0, MAP_HEIGHT = 0; // Size Of Our .RAW Height Map ( NEW )
 #define HEIGHT_RATIO 1.5f // Ratio That The Y Is Scaled According To The X And Z ( NEW )
-int STEP_SIZE = 15;
+int STEP_SIZE = 5;
 Mat heightMap;
 
 // key control

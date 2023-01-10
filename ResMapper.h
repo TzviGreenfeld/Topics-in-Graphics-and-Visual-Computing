@@ -17,6 +17,7 @@ public:
 		p.y = lowResTriangles[largeTriangleId]->y + int(largeEven * largeStepSize / 2);
 
 		Point ta, tb, tc;
+		/*
 		ta.x = triangles[smallTriangleId]->x;
 		ta.y = triangles[smallTriangleId]->y;
 
@@ -27,7 +28,16 @@ public:
 
 		tc.x = ta.x;
 		tc.y = ta.y + smallEven * smallStepSize;
+		*/
+		Triangle *t = triangles[smallTriangleId];
+		ta.x = t->v1[0];
+		ta.y = t->v1[2];
 
+		tb.x = t->v2[0];
+		tb.y = t->v2[2];
+
+		tb.x = t->v3[0];
+		tb.y = t->v3[2];
 		double area_abp = Triangle::triangleArea(ta, tb, p);
 		double area_acp = Triangle::triangleArea(ta, tc, p);
 		double area_bcp = Triangle::triangleArea(tb, tc, p);
@@ -46,6 +56,7 @@ public:
 		p.y = triangles[smallTriangleId]->y + int(smallEven * smallStepSize / 2);
 
 		Point ta, tb, tc;
+		/*
 		ta.x = lowResTriangles[largeTriangleId]->x;
 		ta.y = lowResTriangles[largeTriangleId]->y;
 
@@ -56,6 +67,16 @@ public:
 
 		tc.x = ta.x;
 		tc.y = ta.y + largeEven * largeStepSize;
+		*/
+		Triangle* t = lowResTriangles[largeTriangleId];
+		ta.x = t->v1[0];
+		ta.y = t->v1[2];
+
+		tb.x = t->v2[0];
+		tb.y = t->v2[2];
+
+		tc.x = t->v3[0];
+		tc.y = t->v3[2];
 
 		double area_abp = Triangle::triangleArea(ta, tb, p);
 		double area_acp = Triangle::triangleArea(ta, tc, p);
